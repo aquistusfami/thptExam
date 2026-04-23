@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -12,12 +12,17 @@ model User {
   email        String        @unique
   password     String
   name         String?
-  role         String        @default("STUDENT") // STUDENT | ADMIN
+  role         Role          @default(STUDENT)
   attempts     Attempt[]
   savedQuestions SavedQuestion[]
   achievements UserAchievement[]
   dailyGoals   DailyGoal[]
   createdAt    DateTime      @default(now())
+}
+
+enum Role {
+  STUDENT
+  ADMIN
 }
 
 model Subject {
@@ -39,17 +44,30 @@ model Exam {
   createdAt   DateTime       @default(now())
 }
 
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+  EXTREMELY_HARD
+}
+
+enum QuestionType {
+  PART1_SINGLE_CHOICE
+  PART2_TRUE_FALSE
+  PART3_SHORT_ANSWER
+}
+
 model Question {
-  id            String         @id @default(uuid())
+  id            String          @id @default(uuid())
   subjectId     String
-  subject       Subject        @relation(fields: [subjectId], references: [id])
-  topic         String?        // Ví dụ: Đạo hàm, Tích phân
-  difficulty    String         @default("MEDIUM")
-  type          String         @default("PART1_SINGLE_CHOICE")
-  content       String
-  options       String         @default("[]") 
-  correctAnswer String         
-  explanation   String?
+  subject       Subject         @relation(fields: [subjectId], references: [id])
+  topic         String?
+  difficulty    DifficultyLevel @default(MEDIUM)
+  type          QuestionType    @default(PART1_SINGLE_CHOICE)
+  content       String          // LaTeX question body
+  options       Json            // Array of options
+  correctAnswer Json            // number | boolean[] | string
+  explanation   String?         // Lời giải LaTeX
   exams         ExamQuestion[]
   savedBy       SavedQuestion[]
   tags          QuestionTag[]
@@ -57,7 +75,7 @@ model Question {
 
 model QuestionTag {
   id         String   @id @default(uuid())
-  name       String   @unique // Ví dụ: Đại số, Hình học
+  name       String   @unique
   questions  Question[]
 }
 
@@ -78,30 +96,35 @@ model Attempt {
   examId      String
   exam        Exam      @relation(fields: [examId], references: [id])
   score       Float?
-  answers     String    @default("{}") 
+  answers     Json      // Record<string, any>
   isFinished  Boolean   @default(false)
   startedAt   DateTime  @default(now())
   submittedAt DateTime?
 }
 
 model SavedQuestion {
-  id         String   @id @default(uuid())
+  id         String            @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  user       User              @relation(fields: [userId], references: [id])
   questionId String
-  question   Question @relation(fields: [questionId], references: [id])
-  type       String   @default("STAR") // STAR | INCORRECT
-  notes      String?  // LaTeX notes from student
-  createdAt  DateTime @default(now())
+  question   Question          @relation(fields: [questionId], references: [id])
+  type       SavedQuestionType @default(STAR)
+  notes      String?           // LaTeX notes
+  createdAt  DateTime          @default(now())
 
   @@unique([userId, questionId, type])
+}
+
+enum SavedQuestionType {
+  STAR
+  INCORRECT
 }
 
 model Achievement {
   id          String   @id @default(uuid())
   title       String   @unique
   description String
-  icon        String?  // Lucide icon name
+  icon        String?
   users       UserAchievement[]
 }
 

@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized - Vui lòng đăng nhập" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -18,7 +18,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // 1. Lấy dữ liệu đề thi và câu hỏi
     const examQuestions = await prisma.examQuestion.findMany({
       where: { examId },
       include: { question: true },
@@ -27,11 +26,10 @@ export async function POST(request: Request) {
     let totalScore = 0;
     const incorrectQuestionIds: string[] = [];
 
-    // 2. Chấm điểm Server-side & Lưu vết sai
     for (const eq of examQuestions) {
       const q = eq.question;
       const userAns = answers[q.id];
-      const correctAnswer = JSON.parse(q.correctAnswer);
+      const correctAnswer = q.correctAnswer; // Native Json in PostgreSQL
 
       let isCorrect = false;
 
@@ -65,7 +63,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Cập nhật Sổ tay lỗi sai (Error Notebook)
     if (incorrectQuestionIds.length > 0) {
       await Promise.all(
         incorrectQuestionIds.map((qId) =>
@@ -88,20 +85,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Cập nhật Mục tiêu hàng ngày (Daily Goal)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const goal = await prisma.dailyGoal.upsert({
-      where: {
-        userId_date: {
-          userId: session.user.id,
-          date: today,
-        },
-      },
-      update: {
-        currentCount: { increment: examQuestions.length },
-      },
+    await prisma.dailyGoal.upsert({
+      where: { userId_date: { userId: session.user.id, date: today } },
+      update: { currentCount: { increment: examQuestions.length } },
       create: {
         userId: session.user.id,
         date: today,
@@ -110,20 +99,11 @@ export async function POST(request: Request) {
       },
     });
 
-    if (goal.currentCount >= goal.targetCount && !goal.isCompleted) {
-      await prisma.dailyGoal.update({
-        where: { id: goal.id },
-        data: { isCompleted: true },
-      });
-      // Ở đây có thể thêm logic tặng Badge "Daily Achiever"
-    }
-
-    // 5. Lưu Attempt
     const attempt = await prisma.attempt.create({
       data: {
         examId,
         userId: session.user.id,
-        answers: JSON.stringify(answers),
+        answers: answers, // Native Json support
         score: Math.round(totalScore * 100) / 100,
         isFinished: true,
         submittedAt: new Date(),

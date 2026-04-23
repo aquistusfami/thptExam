@@ -1,12 +1,11 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Bắt đầu Seed dữ liệu Nâng cao...");
+  console.log("🌱 Bắt đầu Seed dữ liệu Nâng cao (PostgreSQL)...");
 
-  // Tạo một số Huy hiệu (Achievements)
+  // Achievements
   const achievements = [
     { title: "Chiến binh 7 ngày", description: "Luyện tập liên tục trong 7 ngày", icon: "Flame" },
     { title: "Bậc thầy Hình học", description: "Hoàn thành 100 câu hỏi hình học", icon: "Trophy" },
@@ -21,7 +20,7 @@ async function main() {
     });
   }
 
-  // Tạo một số Tags chủ đề
+  // Tags
   const tags = ["Đại số", "Giải tích", "Hình học", "Lượng giác", "Xác suất"];
   for (const tag of tags) {
     await prisma.questionTag.upsert({
@@ -31,12 +30,7 @@ async function main() {
     });
   }
 
-  console.log("✅ Seed nâng cao hoàn tất!");
+  console.log("✅ Seed nâng cao PostgreSQL hoàn tất!");
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
