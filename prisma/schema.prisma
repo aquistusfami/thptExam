@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  name         String?
+  role         String        @default("STUDENT") // STUDENT | ADMIN
+  attempts     Attempt[]
+  savedQuestions SavedQuestion[]
+  achievements UserAchievement[]
+  dailyGoals   DailyGoal[]
+  createdAt    DateTime      @default(now())
+}
+
+model Subject {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  exams     Exam[]
+  questions Question[]
+}
+
+model Exam {
+  id          String         @id @default(uuid())
+  title       String
+  category    String?
+  durationMin Int
+  subjectId   String
+  subject     Subject        @relation(fields: [subjectId], references: [id])
+  questions   ExamQuestion[]
+  attempts    Attempt[]
+  createdAt   DateTime       @default(now())
+}
+
+model Question {
+  id            String         @id @default(uuid())
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id])
+  topic         String?        // Ví dụ: Đạo hàm, Tích phân
+  difficulty    String         @default("MEDIUM")
+  type          String         @default("PART1_SINGLE_CHOICE")
+  content       String
+  options       String         @default("[]") 
+  correctAnswer String         
+  explanation   String?
+  exams         ExamQuestion[]
+  savedBy       SavedQuestion[]
+  tags          QuestionTag[]
+}
+
+model QuestionTag {
+  id         String   @id @default(uuid())
+  name       String   @unique // Ví dụ: Đại số, Hình học
+  questions  Question[]
+}
+
+model ExamQuestion {
+  examId     String
+  questionId String
+  orderIndex Int
+  exam       Exam     @relation(fields: [examId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@id([examId, questionId])
+}
+
+model Attempt {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  examId      String
+  exam        Exam      @relation(fields: [examId], references: [id])
+  score       Float?
+  answers     String    @default("{}") 
+  isFinished  Boolean   @default(false)
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+}
+
+model SavedQuestion {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  type       String   @default("STAR") // STAR | INCORRECT
+  notes      String?  // LaTeX notes from student
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, questionId, type])
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  title       String   @unique
+  description String
+  icon        String?  // Lucide icon name
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  unlockedAt    DateTime    @default(now())
+
+  @@id([userId, achievementId])
+}
+
+model DailyGoal {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  date         DateTime @default(now())
+  targetCount  Int      @default(20)
+  currentCount Int      @default(0)
+  isCompleted  Boolean  @default(false)
+
+  @@unique([userId, date])
+}

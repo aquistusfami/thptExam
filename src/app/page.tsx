@@ -1,65 +1,53 @@
-import Image from "next/image";
+import { getServerSession } from "next-auth/next";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import QuizEngine, { QuestionProps } from '@/components/features/QuizEngine';
+import SignOutButton from '@/components/ui/SignOutButton';
 
-export default function Home() {
+const mockQuestions: QuestionProps[] = [
+  {
+    id: 'q1',
+    type: 'PART1_SINGLE_CHOICE',
+    content: 'Tính tích phân sau đây: \\(\\int_0^1 x^2 \\,dx\\)',
+    options: ['\\frac{1}{3}', '1', '\\frac{1}{2}', '0'],
+  },
+  {
+    id: 'q2',
+    type: 'PART1_SINGLE_CHOICE',
+    content: 'Tập nghiệm của phương trình \\log_2(x-1) = 3\\) là:',
+    options: ['x = 8', 'x = 9', 'x = 10', 'x = 7'],
+  },
+  {
+    id: 'q3',
+    type: 'PART1_SINGLE_CHOICE',
+    content: 'Cấp số cộng \\((u_n)\\) có \\(u_1 = -2\\) và công sai \\(d = 3\\). Giá trị của \\(u_{10}\\) bằng:',
+    options: ['-29', '25', '28', '-2 \\cdot 3^9'],
+  }
+];
+
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/login");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-slate-50 py-10 font-[family-name:var(--font-geist-sans)]">
+      <div className="max-w-6xl mx-auto px-4 mb-4 flex justify-end">
+        <SignOutButton />
+      </div>
+      <div className="max-w-6xl mx-auto px-4 mb-8 text-center">
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">KỲ THI TỐT NGHIỆP THPT QG 2025</h1>
+        <p className="text-slate-500 mt-2">Môn: TOÁN HỌC - Thời gian làm bài: 90 phút</p>
+        <div className="mt-4 flex items-center justify-center gap-4 text-sm font-medium text-slate-600">
+          <span>Xin chào, {session.user.name ?? session.user.email}</span>
+          {session.user.role === 'ADMIN' && (
+            <a href="/admin" className="text-blue-600 hover:underline">Quản trị viên</a>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+      <QuizEngine questions={mockQuestions} examId="exam_mock_01" />
+    </main>
   );
 }
