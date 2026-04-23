@@ -8,7 +8,8 @@ import {
   Image as ImageIcon, 
   Plus,
   RefreshCcw,
-  Check
+  Check,
+  BookOpen
 } from "lucide-react";
 import 'katex/dist/katex.min.css';
 import { BlockMath, InlineMath } from 'react-katex';
