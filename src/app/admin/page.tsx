@@ -6,7 +6,7 @@ import { BookOpen, Shield } from "lucide-react";
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || (session.user as any).role !== "ADMIN") {
     redirect("/login?error=unauthorized");
   }
 

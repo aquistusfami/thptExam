@@ -41,8 +41,8 @@ export default async function Home() {
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">KỲ THI TỐT NGHIỆP THPT QG 2025</h1>
         <p className="text-slate-500 mt-2">Môn: TOÁN HỌC - Thời gian làm bài: 90 phút</p>
         <div className="mt-4 flex items-center justify-center gap-4 text-sm font-medium text-slate-600">
-          <span>Xin chào, {session.user.name ?? session.user.email}</span>
-          {session.user.role === 'ADMIN' && (
+          <span>Xin chào, {session.user?.name ?? session.user?.email}</span>
+          {(session.user as any).role === 'ADMIN' && (
             <a href="/admin" className="text-blue-600 hover:underline">Quản trị viên</a>
           )}
         </div>
